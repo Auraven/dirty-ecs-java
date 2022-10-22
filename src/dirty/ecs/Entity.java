@@ -1,6 +1,7 @@
 package dirty.ecs;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -15,9 +16,7 @@ public class Entity {
 	public Entity(String name, Class<? extends EntityComponent>... component_classes) {
 		this.name = name;
 		this.component_classes = new ArrayList<Class<? extends EntityComponent>>();
-		for(Class<? extends EntityComponent> component_class: component_classes) {
-			this.component_classes.add(component_class);
-		}
+		Collections.addAll(this.component_classes, component_classes);
 		global_component_map = new HashMap<Class<? extends EntityComponent>, EntityComponent>();
 	}
 	

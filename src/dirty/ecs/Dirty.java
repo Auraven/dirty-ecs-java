@@ -52,6 +52,8 @@ public abstract class Dirty {
 			}
 			if(system.isEnabled()) {
 				system.onEnable();
+			}else{
+				system.onDisable();
 			}
 		}
 	}
@@ -116,9 +118,15 @@ public abstract class Dirty {
 		}
 		
 		instance_map.put(instance.id, instance);
-		tagged_instances.get(entity_name).add(instance.id);
-		
+		tagInstance(instance, entity_name);
+
 		entity.onSpawn(instance);
+
+		if(instance.isEnabled()){
+			entity.onEnable(instance);
+		}else{
+			entity.onDisable(instance);
+		}
 		
 		return instance;
 	}
@@ -127,10 +135,12 @@ public abstract class Dirty {
 		EntityInstance instance = instance_map.get(instance_id);
 		
 		instance_map.remove(instance_id);
-		tagged_instances.get(instance.entity_name).remove(instance_id);
-		
+
+		unnameInstance(instance);
+		untagInstance(instance);
+
 		recycle_map.get(instance.entity_name).add(instance);
-		
+
 		Entity entity = entity_map.get(instance.entity_name);
 		entity.onDespawn(instance);
 	}
@@ -140,15 +150,22 @@ public abstract class Dirty {
 	}
 	
 	public static void nameInstance(Integer instance_id, String name) {
-		named_instances.put(name, instance_id);
+		nameInstance(instance_map.get(instance_id), name);
 	}
 	
 	public static void nameInstance(EntityInstance instance, String name) {
-		nameInstance(instance.id, name);
+		named_instances.put(name, instance.id);
+		instance.setName(name);
 	}
 	
 	public static void unnameInstance(String name) {
-		named_instances.remove(name);
+		unnameInstance(instance_map.get(named_instances.get(name)));
+	}
+	public static void unnameInstance(EntityInstance instance){
+		if(named_instances.containsKey(instance.getName())){
+			named_instances.remove(instance.getName());
+			instance.clearName();
+		}
 	}
 	
 	public EntityInstance getInstanceByName(String name) {
@@ -157,20 +174,32 @@ public abstract class Dirty {
 		return instance_map.get(instance_id);
 	}
 	
-	public static void tagInstance(Integer instance_id, String tag) {
-		tagged_instances.get(tag).add(instance_id);
+	public static void tagInstance(Integer instance_id, String... tags) {
+		tagInstance(instance_map.get(instance_id), tags);
 	}
 	
-	public static void tagInstance(EntityInstance instance, String tag) {
-		tagInstance(instance.id, tag);
+	public static void tagInstance(EntityInstance instance, String... tags) {
+		for(String tag: tags){
+			tagged_instances.get(tag).add(instance.id);
+		}
+		instance.addTags(tags);
 	}
 	
-	public static void untagInstance(Integer instance_id, String tag) {
-		tagged_instances.get(tag).remove(instance_id);
+	public static void untagInstance(Integer instance_id) {
+		untagInstance(instance_map.get(instance_id));
 	}
-	
-	public static void untagInstance(EntityInstance instance, String tag) {
-		untagInstance(instance.id, tag);
+	public static void untagInstance(Integer instance_id, String... tags) {
+		untagInstance(instance_map.get(instance_id), tags);
+	}
+
+	public static void untagInstance(EntityInstance instance) {
+		untagInstance(instance, instance.getTags().toArray(new String[0]));
+	}
+	public static void untagInstance(EntityInstance instance, String... tags) {
+		for(String tag: tags){
+			tagged_instances.get(tag).remove(instance.id);
+		}
+		instance.removeTags(tags);
 	}
 	
 	public static ArrayList<Integer> getInstancesByTag(String tag) {
